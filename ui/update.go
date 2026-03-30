@@ -65,6 +65,9 @@ func (m TodoTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 								}
 							}
 						}
+						if err := m.todoList.SaveWithSource(m.todoFileName, m.sourceLabel); err != nil {
+							m.SetStatusMessage("save failed: " + err.Error())
+						}
 					}
 				} else if m.mode == ModeArchiveConfirm {
 					if len(m.selectedTodoIDs) > 0 && m.bulkActionActive {
@@ -276,6 +279,9 @@ func (m TodoTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 									}
 								}
 							}
+						}
+						if err := m.todoList.SaveWithSource(m.todoFileName, m.sourceLabel); err != nil {
+							m.SetStatusMessage("save failed: " + err.Error())
 						}
 						m.updateRows()
 						return m, m.forceRelayoutCmd()
