@@ -229,11 +229,54 @@ func (m TodoTableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.table.Rows()) > 0 {
 					if m.SkipConfirmationsByDefault {
 						if len(m.selectedTodoIDs) > 0 && m.bulkActionActive {
-							// Bulk archive/unarchive
-							// ... (logic as before)
+							archivedCount := 0
+							unarchivedCount := 0
+							for id := range m.selectedTodoIDs {
+								todo := m.findTodoByID(id)
+								if todo != nil {
+									if todo.Archived {
+										m.todoList.Unarchive(id)
+										unarchivedCount++
+									} else {
+										m.todoList.Archive(id)
+										archivedCount++
+									}
+								}
+							}
+							m.selectedTodoIDs = make(map[int]bool)
+							m.bulkActionActive = false
+
+							status := []string{}
+							if archivedCount > 0 {
+								status = append(status, fmt.Sprintf("%d archived", archivedCount))
+							}
+							if unarchivedCount > 0 {
+								status = append(status, fmt.Sprintf("%d unarchived", unarchivedCount))
+							}
+							if len(status) > 0 {
+								m.SetStatusMessage(fmt.Sprintf("Tasks: %s", strings.Join(status, ", ")))
+							}
 						} else {
-							// Single archive/unarchive
-							// ... (logic as before)
+							selectedIndex := m.table.Cursor()
+							var filteredTodos []model.Todo
+							if m.showAll {
+								filteredTodos = m.todoList.Todos
+							} else if m.showArchivedOnly {
+								filteredTodos = m.todoList.GetArchivedTodos()
+							} else {
+								filteredTodos = m.todoList.GetActiveTodos()
+							}
+
+							if selectedIndex < len(filteredTodos) {
+								todo := filteredTodos[selectedIndex]
+								if todo.Archived {
+									m.todoList.Unarchive(todo.ID)
+									m.SetStatusMessage("Task unarchived")
+								} else {
+									m.todoList.Archive(todo.ID)
+									m.SetStatusMessage("Task archived")
+								}
+							}
 						}
 						m.updateRows()
 						return m, m.forceRelayoutCmd()
